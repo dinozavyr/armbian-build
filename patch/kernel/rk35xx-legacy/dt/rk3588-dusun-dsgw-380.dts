@@ -24,6 +24,19 @@
 	};
 };
 
+/*
+ * EVB camera power switches. Their pins are HDMI1 CEC (GPIO2_C4) and
+ * SPI1 (GPIO1_D2, GPIO1_D3) on this board.
+ */
+/delete-node/ &vcc_mipicsi0;
+/delete-node/ &vcc_mipicsi1;
+/delete-node/ &vcc_mipidcphy0;
+
+/* EVB LCD power switch; GPIO2_C1 is a GMAC0 RGMII pin on this board */
+&vcc3v3_lcd_n {
+	status = "disabled";
+};
+
 /* Debug console on plain UART2 (ttyS2), not the FIQ debugger */
 &fiq_debugger {
 	status = "disabled";
