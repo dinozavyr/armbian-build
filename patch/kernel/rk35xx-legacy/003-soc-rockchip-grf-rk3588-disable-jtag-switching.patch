@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Radoslav Furnadzhiev <dinozavyrtrex@gmail.com>
+Date: Thu, 1 Oct 2026 20:00:00 +0300
+Subject: [PATCH] soc: rockchip: grf: rk3588: disable auto jtag/sdmmc switching
+
+RK3588 resets with SYS_GRF_SOC_CON6 bit 14 (force_jtag) set. If the
+SDMMC controller sees no card detect, the SDMMC data pins switch to JTAG.
+An SDIO device without card detect then fails in 4-bit and UHS modes.
+Clear the bit at boot, as for RK3288 and RK3399.
+---
+--- a/drivers/soc/rockchip/grf.c
++++ b/drivers/soc/rockchip/grf.c
+@@ -229,9 +229,11 @@
+ 	.num_values = ARRAY_SIZE(rk3399_defaults),
+ };
+ 
++#define RK3588_SYS_GRF_SOC_CON6		0x0318
+ #define RK3588_SYS_GRF_SOC_CON7		0x031c
+ 
+ static const struct rockchip_grf_value rk3588_sys_grf_defaults[] __initconst = {
++	{ "jtag switching", RK3588_SYS_GRF_SOC_CON6, HIWORD_UPDATE(0, 1, 14) },
+ 	{ "Connect EDP hpd to IO", RK3588_SYS_GRF_SOC_CON7, HIWORD_UPDATE(0x3, 0x3, 14) },
+ };
+ 
