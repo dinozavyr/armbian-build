@@ -12,6 +12,7 @@ BOOT_FDT_FILE="rockchip/rk3588-dusun-dsgw-380.dtb"
 IMAGE_PARTITION_TABLE="gpt"
 DEFAULT_CONSOLE="both"
 PACKAGE_LIST_BOARD="rfkill bluetooth bluez bluez-tools"
+enable_extension "rockchip-rknn-mpp" # MPP, RGA and RKNN userspace
 
 # Armbian's vendor U-Boot FIT (make_fit_atf.sh) packs only ATF + U-Boot, no OP-TEE,
 # so drop the EVB defconfig's OP-TEE client to avoid SMC calls into a missing TEE.
