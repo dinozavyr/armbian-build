@@ -406,7 +406,8 @@ driver_rtw88() {
 
 driver_rtl8852bs() {
 	# Wireless driver for Realtek 8852BS SDIO Wireless driver used in BananaPi F3 and Armsom Sige5
-	if linux-version compare "${version}" ge 6.1 && linux-version compare "${version}" lt 7.3 && [[ "${LINUXFAMILY}" == spacemit || "${LINUXFAMILY}" == rk35xx || "${LINUXFAMILY}" == rockchip64 ]]; then
+	# rk35xx legacy (5.10) is included for the Dusun DSGW-380
+	if { linux-version compare "${version}" ge 6.1 || [[ "${LINUXFAMILY}" == rk35xx ]]; } && linux-version compare "${version}" lt 7.3 && [[ "${LINUXFAMILY}" == spacemit || "${LINUXFAMILY}" == rk35xx || "${LINUXFAMILY}" == rockchip64 ]]; then
 
 		# Attach to specific commit
 		local rtl8852bs_ver='commit:916053dd2805d16c458d92c3216c731ec956eb12' # Commit date: Aug 06, 2026 (please update when updating commit ref)
@@ -443,9 +444,18 @@ driver_rtl8852bs() {
 		sed -i "s/RTW_WARN_LMT(/\/\/RTW_WARN_LMT(/g" \
 			"$kerneldir/drivers/net/wireless/realtek/rtl8852bs/core/rtw_xmit.c"
 
+		# Kernels before 6.1 need the NAPI weight argument
+		if linux-version compare "${version}" lt 6.1; then
+			sed -i "s/netif_napi_add(dev, &adapter->napi, rtw_recv_napi_poll);/netif_napi_add(dev, \&adapter->napi, rtw_recv_napi_poll, NAPI_POLL_WEIGHT);/" \
+				"$kerneldir/drivers/net/wireless/realtek/rtl8852bs/os_dep/linux/os_intfs.c"
+		fi
+
 		# Add to section Makefile
 		echo "obj-\$(CONFIG_RTL8852BS) += rtl8852bs/" >> "$kerneldir/drivers/net/wireless/realtek/Makefile"
-		sed -i '/source "drivers\/net\/wireless\/realtek\/rtw89\/Kconfig"/a source "drivers\/net\/wireless\/realtek\/rtl8852bs\/Kconfig"' \
+		# Kernels before 6.1 have no rtw89; hook in after rtw88
+		local rtl8852bs_kconfig_after="rtw89"
+		linux-version compare "${version}" lt 6.1 && rtl8852bs_kconfig_after="rtw88"
+		sed -i "/source \"drivers\/net\/wireless\/realtek\/${rtl8852bs_kconfig_after}\/Kconfig\"/a source \"drivers\/net\/wireless\/realtek\/rtl8852bs\/Kconfig\"" \
 			"$kerneldir/drivers/net/wireless/realtek/Kconfig"
 
 		# We have to enable specific platforms in the driver Makefile to enable specific driver tweaks, they are all "n" by default

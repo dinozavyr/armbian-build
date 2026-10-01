@@ -11,6 +11,7 @@ KERNEL_TARGET="legacy" # Rockchip 5.10 BSP, as shipped by the vendor; vendor 6.1
 BOOT_FDT_FILE="rockchip/rk3588-dusun-dsgw-380.dtb"
 IMAGE_PARTITION_TABLE="gpt"
 DEFAULT_CONSOLE="both"
+PACKAGE_LIST_BOARD="rfkill bluetooth bluez bluez-tools"
 
 # Armbian's vendor U-Boot FIT (make_fit_atf.sh) packs only ATF + U-Boot, no OP-TEE,
 # so drop the EVB defconfig's OP-TEE client to avoid SMC calls into a missing TEE.
@@ -21,4 +22,10 @@ function post_config_uboot_target__dsgw380_no_optee() {
 	for opt in CONFIG_OPTEE_CLIENT CONFIG_OPTEE_V2 CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION; do
 		sed -i "s/^${opt}=.*/# ${opt} is not set/" .config
 	done
+}
+
+# WiFi: out-of-tree RTL8852BS SDIO driver. Bluetooth: RTL8852BS on UART6 via serdev hci_h5.
+function custom_kernel_config__dsgw380_wireless() {
+	opts_m+=("RTL8852BS")
+	opts_y+=("SERIAL_DEV_BUS" "SERIAL_DEV_CTRL_TTYPORT" "BT_HCIUART_3WIRE" "BT_HCIUART_RTL")
 }

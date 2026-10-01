@@ -122,20 +122,24 @@
 	WIFI,host_wake_irq = <&gpio0 RK_PB0 GPIO_ACTIVE_LOW>;
 };
 
-/* Bluetooth on UART6 */
+/* Bluetooth (RTL8852BS) on UART6, driven by hci_h5 */
 &wireless_bluetooth {
-	/delete-property/ clocks;
-	/delete-property/ clock-names;
-	/delete-property/ uart_rts_gpios;
-	/delete-property/ pinctrl-1;
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart6m1_rtsn>;
+	status = "disabled";
 };
 
 &uart6 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&uart6m1_xfer &uart6m1_ctsn>;
+	pinctrl-0 = <&uart6m1_xfer &uart6m1_ctsn &uart6m1_rtsn>;
 	status = "okay";
+
+	bluetooth {
+		compatible = "realtek,rtl8852bs-bt";
+		enable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+		device-wake-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+		host-wake-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&bt_reset_gpio &bt_wake_gpio &bt_irq_gpio>;
+	};
 };
 
 &uart9 {
