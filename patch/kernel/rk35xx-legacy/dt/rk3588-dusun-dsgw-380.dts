@@ -229,6 +229,11 @@
 	status = "disabled";
 };
 
+/* EVB RTC; not fitted on this board */
+&hym8563 {
+	status = "disabled";
+};
+
 &usbhost3_0 {
 	status = "okay";
 };
