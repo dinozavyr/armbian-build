@@ -1,0 +1,440 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * DUSUN DSGW-380 IoT gateway, Rockchip RK3588.
+ *
+ * Based on the Rockchip EVB7 V11 reference board. Differences from the EVB
+ * follow the DTB that the vendor firmware boots with (kernel 5.10.160).
+ */
+
+/dts-v1/;
+
+#include "rk3588-evb7-v11.dtsi"
+#include "rk3588-linux.dtsi"
+
+/ {
+	model = "DUSUN DSGW-380";
+	compatible = "dusun,dsgw-380", "rockchip,rk3588";
+
+	/delete-node/ chosen;
+
+	reserved-memory {
+		cma {
+			reg = <0x0 (256 * 0x100000) 0x0 (128 * 0x100000)>;
+		};
+	};
+};
+
+/*
+ * EVB camera power switches. Their pins are HDMI1 CEC (GPIO2_C4) and
+ * SPI1 (GPIO1_D2, GPIO1_D3) on this board.
+ */
+/delete-node/ &vcc_mipicsi0;
+/delete-node/ &vcc_mipicsi1;
+/delete-node/ &vcc_mipidcphy0;
+
+/* EVB LCD power switch; GPIO2_C1 is a GMAC0 RGMII pin on this board */
+&vcc3v3_lcd_n {
+	status = "disabled";
+};
+
+/* Debug console on plain UART2 (ttyS2), not the FIQ debugger */
+&fiq_debugger {
+	status = "disabled";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2m0_xfer>;
+	status = "okay";
+};
+
+/* U-Boot packs no OP-TEE */
+&optee {
+	status = "disabled";
+};
+
+/* Ethernet: two RTL8211F PHYs */
+&gmac0 {
+	/* Use rgmii-rxid mode to disable rx delay inside Soc */
+	phy-mode = "rgmii-rxid";
+	clock_in_out = "output";
+
+	snps,reset-gpio = <&gpio3 RK_PC7 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	/* Reset time is 20ms, 100ms for rtl8211f */
+	snps,reset-delays-us = <0 20000 100000>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac0_miim
+		     &gmac0_tx_bus2
+		     &gmac0_rx_bus2
+		     &gmac0_rgmii_clk
+		     &gmac0_rgmii_bus>;
+
+	tx_delay = <0x47>;
+
+	phy-handle = <&rgmii_phy0>;
+	status = "okay";
+};
+
+&mdio0 {
+	rgmii_phy0: phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x1>;
+	};
+};
+
+&gmac1 {
+	tx_delay = <0x45>;
+};
+
+/*
+ * WiFi (RTL8852BS) on the SDMMC controller. The controller switches the
+ * I/O rail (vccio_sd_s0, RK806 PLDO5) from 3.3 V to 1.8 V for SDR104.
+ */
+&sdmmc {
+	max-frequency = <50000000>;
+	clock-frequency = <50000000>;
+	clock-freq-min-max = <200000 50000000>;
+	no-sd;
+	no-mmc;
+	bus-width = <4>;
+	disable-wp;
+	cap-sd-highspeed;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	mmc-pwrseq = <&sdio_pwrseq>;
+	non-removable;
+	support-sdio;
+	sd-uhs-sdr104;
+	sd-uhs-sdr50;
+	vqmmc-supply = <&vccio_sd_s0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc_bus4 &sdmmc_cmd &sdmmc_clk>;
+	/delete-property/ no-sdio;
+	/delete-property/ cap-mmc-highspeed;
+	/delete-property/ vmmc-supply;
+	status = "okay";
+};
+
+&sdio {
+	status = "disabled";
+};
+
+&sdio_pwrseq {
+	/delete-property/ clocks;
+	/delete-property/ clock-names;
+	reset-gpios = <&gpio3 RK_PC0 GPIO_ACTIVE_LOW>;
+};
+
+&wireless_wlan {
+	pinctrl-0 = <&wifi_clk_32k>;
+	WIFI,reset_gpio = <&gpio3 RK_PC0 GPIO_ACTIVE_HIGH>;
+	WIFI,host_wake_irq = <&gpio0 RK_PB0 GPIO_ACTIVE_LOW>;
+};
+
+/* Bluetooth (RTL8852BS) on UART6, driven by hci_h5 */
+&wireless_bluetooth {
+	status = "disabled";
+};
+
+&uart6 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart6m1_xfer &uart6m1_ctsn &uart6m1_rtsn>;
+	status = "okay";
+
+	bluetooth {
+		compatible = "realtek,rtl8852bs-bt";
+		enable-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+		device-wake-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+		host-wake-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&bt_reset_gpio &bt_wake_gpio &bt_irq_gpio>;
+	};
+};
+
+&uart9 {
+	status = "disabled";
+};
+
+/* Serial ports and buses on the board connectors */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0m2_xfer>;
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1m1_xfer>;
+	status = "okay";
+};
+
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart5m1_xfer>;
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1m1_pins>;
+	assigned-clocks = <&cru CLK_CAN1>;
+	assigned-clock-rates = <200000000>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi1m2_cs0 &spi1m2_pins>;
+	num-cs = <1>;
+	max-freq = <50000000>;
+	status = "okay";
+
+	spidev1: spidev@0 {
+		compatible = "rockchip,spidev";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		status = "okay";
+	};
+};
+
+/* USB */
+&i2c6 {
+	ptn5150: ptn5150@3d {
+		compatible = "nxp,ptn5150";
+		reg = <0x3d>;
+		interrupt-parent = <&gpio4>;
+		interrupts = <RK_PC6 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ptn5150>;
+		status = "okay";
+
+		connector {
+			compatible = "usb-c-connector";
+			label = "USB-C";
+			power-role = "dual";
+			data-role = "dual";
+			try-power-role = "sink";
+			source-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)>;
+			sink-pdos = <PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)
+				     PDO_VAR(5000, 20000, 3000)>;
+			op-sink-microwatt = <15000000>;
+			self-powered;
+		};
+	};
+};
+
+&usbc0 {
+	status = "disabled";
+};
+
+/* EVB RTC; not fitted on this board */
+&hym8563 {
+	status = "disabled";
+};
+
+&usbhost3_0 {
+	status = "okay";
+};
+
+&usbhost_dwc3_0 {
+	status = "okay";
+};
+
+/* Display: two HDMI ports */
+/*
+ * Clock HDMI pixels from the HDMI PHY PLLs. Without them the VOP accepts only
+ * rates the system PLLs divide to exactly, and rejects e.g. 1920x1200 (154 MHz).
+ */
+&display_subsystem {
+	clocks = <&hdptxphy_hdmi0>, <&hdptxphy_hdmi1>;
+	clock-names = "hdmi0_phy_pll", "hdmi1_phy_pll";
+};
+
+&hdmi0 {
+	/delete-property/ enable-gpios;
+};
+
+&hdmi1 {
+	pinctrl-0 = <&hdmim0_tx1_cec &hdmim0_tx1_hpd &hdmim0_tx1_scl &hdmim0_tx1_sda>;
+	/delete-property/ enable-gpios;
+};
+
+/* No DisplayPort on this board */
+&dp0 {
+	status = "disabled";
+};
+
+&dp0_in_vp2 {
+	status = "disabled";
+};
+
+&dp0_sound {
+	status = "disabled";
+};
+
+&dp1 {
+	status = "disabled";
+};
+
+&dp1_in_vp2 {
+	status = "disabled";
+};
+
+&usbdp_phy0_dp {
+	status = "disabled";
+};
+
+&usbdp_phy1_dp {
+	status = "disabled";
+};
+
+&dsi0 {
+	status = "disabled";
+};
+
+&dsi0_in_vp3 {
+	status = "disabled";
+};
+
+&mipi_dcphy0 {
+	status = "disabled";
+};
+
+&route_dsi0 {
+	status = "disabled";
+};
+
+&hdmirx_ctrler {
+	status = "disabled";
+};
+
+/* Not populated: PCIe, audio codec, camera, sensors, touch */
+&pcie2x1l0 {
+	status = "disabled";
+};
+
+&pcie3x4 {
+	status = "disabled";
+};
+
+&pcie30phy {
+	status = "disabled";
+};
+
+&vcc3v3_pcie30 {
+	status = "disabled";
+};
+
+&es8388_sound {
+	status = "disabled";
+};
+
+&i2s0_8ch {
+	status = "disabled";
+};
+
+&csi2_dphy0_hw {
+	status = "disabled";
+};
+
+&csi2_dphy1_hw {
+	status = "disabled";
+};
+
+&mipidcphy0 {
+	status = "disabled";
+};
+
+&mipidcphy1 {
+	status = "disabled";
+};
+
+&i2c4 {
+	status = "disabled";
+};
+
+&i2c5 {
+	status = "disabled";
+};
+
+&i2c7 {
+	status = "disabled";
+};
+
+/* LEDs */
+&leds {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ios_io1 &ios_io2 &wifi_leds_gpio &lora_leds_gpio>;
+
+	pwr_led {
+		gpios = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
+		label = "pwr_led";
+		default-state = "on";
+	};
+
+	wifi_led {
+		gpios = <&gpio1 RK_PC0 GPIO_ACTIVE_HIGH>;
+		label = "wifi_led";
+		default-state = "on";
+	};
+
+	lora_led {
+		gpios = <&gpio1 RK_PC1 GPIO_ACTIVE_HIGH>;
+		label = "lora_led";
+		default-state = "on";
+	};
+
+	lte_led {
+		gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+		label = "lte_led";
+		default-state = "off";
+	};
+
+	usb20 {
+		gpios = <&gpio3 RK_PD3 GPIO_ACTIVE_HIGH>;
+		label = "usb20";
+		default-state = "on";
+	};
+
+	usb30 {
+		gpios = <&gpio3 RK_PD2 GPIO_ACTIVE_HIGH>;
+		label = "usb30";
+		default-state = "on";
+	};
+};
+
+&pinctrl {
+	ios {
+		ios_io1: ios-io1 {
+			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+
+		ios_io2: ios-io2 {
+			rockchip,pins = <1 RK_PA7 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	leds {
+		wifi_leds_gpio: wifi-leds-gpio {
+			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+
+		lora_leds_gpio: lora-leds-gpio {
+			rockchip,pins = <1 RK_PC1 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	usb-typec {
+		pinctrl_ptn5150: pinctrl-ptn5150 {
+			rockchip,pins = <4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	wireless-wlan {
+		wifi_clk_32k: wifi-clk-32k {
+			rockchip,pins = <0 RK_PB2 2 &pcfg_pull_down>;
+		};
+	};
+};
