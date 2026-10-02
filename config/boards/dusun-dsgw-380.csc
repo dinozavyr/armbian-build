@@ -11,6 +11,7 @@ KERNEL_TARGET="legacy,vendor" # Rockchip BSP: 5.10 (as shipped by the vendor) an
 BOOT_FDT_FILE="rockchip/rk3588-dusun-dsgw-380.dtb"
 IMAGE_PARTITION_TABLE="gpt"
 DEFAULT_CONSOLE="both"
+SERIALCON="ttyS2:1500000" # plain UART2; the device tree disables the FIQ debugger (no ttyFIQ0)
 PACKAGE_LIST_BOARD="rfkill bluetooth bluez bluez-tools"
 enable_extension "rockchip-rknn-mpp" # MPP, RGA and RKNN userspace
 
