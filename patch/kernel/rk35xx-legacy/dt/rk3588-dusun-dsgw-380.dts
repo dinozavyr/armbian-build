@@ -53,11 +53,6 @@
 	status = "disabled";
 };
 
-/* PMIC is not used, as in the vendor firmware */
-&spi2 {
-	status = "disabled";
-};
-
 /* Ethernet: two RTL8211F PHYs */
 &gmac0 {
 	/* Use rgmii-rxid mode to disable rx delay inside Soc */
