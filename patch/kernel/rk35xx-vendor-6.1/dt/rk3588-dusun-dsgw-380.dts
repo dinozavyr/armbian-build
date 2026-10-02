@@ -91,11 +91,12 @@
 /*
  * WiFi (RTL8852BS) on the SDMMC controller. The controller switches the
  * I/O rail (vccio_sd_s0, RK806 PLDO5) from 3.3 V to 1.8 V for SDR104.
+ * 200 MHz is the SDMMC controller maximum.
  */
 &sdmmc {
-	max-frequency = <50000000>;
-	clock-frequency = <50000000>;
-	clock-freq-min-max = <200000 50000000>;
+	max-frequency = <200000000>;
+	clock-frequency = <200000000>;
+	clock-freq-min-max = <200000 200000000>;
 	no-sd;
 	no-mmc;
 	bus-width = <4>;
