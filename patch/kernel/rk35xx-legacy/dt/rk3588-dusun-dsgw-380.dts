@@ -89,8 +89,8 @@
 };
 
 /*
- * WiFi (RTL8852BS) on the SDMMC controller. No UHS: the I/O rail
- * (vccio_sd_s0, RK806 PLDO5) stays at 3.3 V because no driver sets it.
+ * WiFi (RTL8852BS) on the SDMMC controller. The controller switches the
+ * I/O rail (vccio_sd_s0, RK806 PLDO5) from 3.3 V to 1.8 V for SDR104.
  */
 &sdmmc {
 	max-frequency = <50000000>;
@@ -106,14 +106,14 @@
 	mmc-pwrseq = <&sdio_pwrseq>;
 	non-removable;
 	support-sdio;
+	sd-uhs-sdr104;
+	sd-uhs-sdr50;
+	vqmmc-supply = <&vccio_sd_s0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc_bus4 &sdmmc_cmd &sdmmc_clk>;
 	/delete-property/ no-sdio;
 	/delete-property/ cap-mmc-highspeed;
 	/delete-property/ vmmc-supply;
-	/delete-property/ vqmmc-supply;
-	/delete-property/ sd-uhs-sdr104;
-	/delete-property/ sd-uhs-sdr50;
 	status = "okay";
 };
 
