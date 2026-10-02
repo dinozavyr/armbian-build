@@ -243,6 +243,15 @@
 };
 
 /* Display: two HDMI ports */
+/*
+ * Clock HDMI pixels from the HDMI PHY PLLs. Without them the VOP accepts only
+ * rates the system PLLs divide to exactly, and rejects e.g. 1920x1200 (154 MHz).
+ */
+&display_subsystem {
+	clocks = <&hdptxphy_hdmi_clk0>, <&hdptxphy_hdmi_clk1>;
+	clock-names = "hdmi0_phy_pll", "hdmi1_phy_pll";
+};
+
 &hdmi0 {
 	/delete-property/ enable-gpios;
 };
