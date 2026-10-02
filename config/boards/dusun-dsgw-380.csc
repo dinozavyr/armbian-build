@@ -30,3 +30,8 @@ function custom_kernel_config__dsgw380_wireless() {
 	opts_m+=("RTL8852BS")
 	opts_y+=("SERIAL_DEV_BUS" "SERIAL_DEV_CTRL_TTYPORT" "BT_HCIUART_3WIRE" "BT_HCIUART_RTL")
 }
+
+# CAN debug output floods the kernel log with error-counter reads.
+function custom_kernel_config__dsgw380_no_can_debug() {
+	opts_n+=("CAN_DEBUG_DEVICES")
+}
